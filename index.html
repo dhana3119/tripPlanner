@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TripPacker</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sage: #7c9a6e;
+      --sage-light: #eef3eb;
+      --warm: #c9956a;
+      --cream: #faf8f5;
+      --ink: #2c2c2c;
+      --muted: #9a9a9a;
+      --sand: #e8e2d8;
+      --white: #ffffff;
+      --indigo: #5b6af0;
+      --indigo-light: #eef0fe;
+      --danger: #e06b6b;
+      --radius: 18px;
+      --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 3rem 1.5rem 2rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--sage-light);
+      color: var(--sage);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 99px;
+      margin-bottom: 1.2rem;
+    }
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
+      font-weight: 900;
+      letter-spacing: -.02em;
+      color: var(--ink);
+      line-height: 1.05;
+      margin-bottom: .7rem;
+    }
+    h1 span { color: var(--sage); font-style: italic; }
+    .subtitle {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 400;
+      max-width: 360px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 10px 1rem;
+      background: rgba(250,248,245,.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--sand);
+    }
+    .nav-inner {
+      display: flex;
+      gap: 4px;
+      max-width: fit-content;
+      margin: 0 auto;
+      background: var(--sand);
+      border-radius: 14px;
+      padding: 5px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-inner::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition);
+    }
+    .tab-btn.active {
+      background: var(--white);
+      color: var(--sage);
+      box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    }
+    .tab-btn svg { opacity: .6; }
+    .tab-btn.active svg { opacity: 1; }
+    .nav-divider {
+      width: 1px;
+      background: rgba(0,0,0,.1);
+      margin: 4px 2px;
+      align-self: stretch;
+    }
+
+    /* ── Input ── */
+    .input-wrap {
+      max-width: 640px;
+      margin: 2rem auto 1.5rem;
+      padding: 0 1rem;
+      position: relative;
+    }
+    .input-icon {
+      position: absolute;
+      left: 30px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+      transition: color var(--transition);
+    }
+    .input-wrap:focus-within .input-icon { color: var(--sage); }
+    .add-input {
+      width: 100%;
+      padding: 18px 20px 18px 52px;
+      border: 1.5px solid transparent;
+      border-radius: var(--radius);
+      background: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--ink);
+      outline: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,.06);
+      transition: all var(--transition);
+    }
+    .add-input::placeholder { color: var(--sand); font-weight: 400; }
+    .add-input:focus { border-color: var(--sage); box-shadow: 0 4px 24px rgba(124,154,110,.15); }
+
+    /* ── Content ── */
+    main { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
+
+    .panel { display: none; animation: fadeUp .22s ease; }
+    .panel.active { display: block; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── List Items ── */
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 4px;
+      border-bottom: 1px solid var(--sand);
+      group: true;
+    }
+    .check-btn {
+      width: 22px; height: 22px;
+      border: 2px solid var(--sand);
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+      font-size: 12px;
+      color: white;
+    }
+    .check-btn:hover { border-color: var(--sage); }
+    .check-btn.checked { background: var(--sage); border-color: var(--sage); }
+    .item-text { flex: 1; font-size: 15px; color: var(--ink); }
+    .item-text.done { text-decoration: line-through; color: var(--muted); }
+    .item-date-wrap { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    .item-date {
+      font-size: 11px;
+      background: var(--sage-light);
+      border: none;
+      border-radius: 6px;
+      padding: 3px 8px;
+      color: var(--sage);
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      outline: none;
+    }
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      opacity: 0;
+      transition: all var(--transition);
+      display: flex;
+    }
+    .list-item:hover .delete-btn { opacity: 1; }
+    .delete-btn:hover { color: var(--danger); background: #fdf0f0; }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 5rem 1rem;
+      color: var(--muted);
+    }
+    .empty p { font-size: 17px; margin-bottom: 6px; }
+    .empty span { font-size: 13px; opacity: .7; }
+
+    /* ── Calendar ── */
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .cal-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--ink);
+      text-transform: capitalize;
+    }
+    .cal-nav { display: flex; gap: 8px; }
+    .cal-nav button {
+      width: 36px; height: 36px;
+      border: 1.5px solid var(--sand);
+      border-radius: 10px;
+      background: var(--white);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink);
+      transition: all var(--transition);
+    }
+    .cal-nav button:hover { background: var(--sage); color: white; border-color: var(--sage); }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      background: var(--sand);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1.5px solid var(--sand);
+    }
+    .cal-day-name {
+      background: var(--white);
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 10px 4px;
+    }
+    .cal-day {
+      background: var(--white);
+      min-height: 90px;
+      padding: 6px;
+      position: relative;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .cal-day:hover { background: var(--sage-light); }
+    .cal-day.other-month { opacity: .3; }
+    .cal-day.today .day-num {
+      background: var(--sage);
+      color: white;
+      border-radius: 50%;
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .day-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 3px;
+    }
+    .cal-event {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 5px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cal-event.task { background: var(--indigo-light); color: var(--indigo); }
+    .cal-event.manual { background: #edf9f4; color: #3aaa7a; }
+    .cal-event.done { opacity: .5; text-decoration: line-through; }
+    .cal-more { font-size: 9px; color: var(--muted); padding-left: 2px; }
+
+    .cal-legend {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: var(--muted); font-weight: 500;
+    }
+    .legend-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 5rem;
+      text-align: center;
+      padding-bottom: 3rem;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 1rem;
+    }
+    .footer-links button {
+      background: none; border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color var(--transition);
+    }
+    .footer-links button:hover { color: var(--sage); }
+    .footer-links .reset { color: var(--danger); }
+    .footer-links .reset:hover { color: #c0392b; }
+
+    /* ── SVG icons (inline) ── */
+    svg { display: inline-block; vertical-align: middle; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Trip <span>Packer</span></h1>
+</header>
+
+<nav>
+  <div class="nav-inner" id="navInner">
+    <button class="tab-btn active" data-tab="0" onclick="setTab(0)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span id="title-0">To Purchase</span>
+    </button>
+    <button class="tab-btn" data-tab="1" onclick="setTab(1)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      <span id="title-1">To Pack</span>
+    </button>
+    <button class="tab-btn" data-tab="2" onclick="setTab(2)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span id="title-2">Packed</span>
+    </button>
+    <button class="tab-btn" data-tab="3" onclick="setTab(3)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      <span id="title-3">To Do</span>
+    </button>
+    <div class="nav-divider"></div>
+    <button class="tab-btn" data-tab="4" onclick="setTab(4)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span id="title-4">Calendar</span>
+    </button>
+  </div>
+</nav>
+
+<main>
+  <!-- Input bar -->
+  <div class="input-wrap" id="inputWrap">
+    <span class="input-icon" id="inputIcon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </span>
+    <input class="add-input" id="addInput" type="text" placeholder="What do you need to add?" onkeydown="handleKey(event)" />
+  </div>
+
+  <!-- Panels -->
+  <div class="panel active" id="panel-0"><div id="list-0"></div></div>
+  <div class="panel" id="panel-1"><div id="list-1"></div></div>
+  <div class="panel" id="panel-2"><div id="list-2"></div></div>
+  <div class="panel" id="panel-3"><div id="list-3"></div></div>
+  <div class="panel" id="panel-4">
+    <div class="cal-header">
+      <span class="cal-title" id="calTitle"></span>
+      <div class="cal-nav">
+        <button onclick="changeMonth(-1)" title="Previous month">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button onclick="changeMonth(1)" title="Next month">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--indigo)"></div>Checklist Task</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3aaa7a"></div>Manual Event</div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const DEFAULT_STATE = {
+  tabTitles: ['To Purchase', 'To Pack', 'Packed', 'To Do', 'Calendar'],
+  toPurchase: [],
+  toPack: [],
+  packed: [],
+  todo: [],
+  events: []
+};
+
+let state = loadState();
+let activeTab = 0;
+let calDate = new Date();
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('trip_packer_state');
+    return s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEFAULT_STATE));
+  } catch { return JSON.parse(JSON.stringify(DEFAULT_STATE)); }
+}
+
+function saveState() {
+  localStorage.setItem('trip_packer_state', JSON.stringify(state));
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function setTab(idx) {
+  activeTab = idx;
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.panel').forEach((p, i) => {
+    p.classList.toggle('active', i === idx);
+  });
+  const inputWrap = document.getElementById('inputWrap');
+  const addInput = document.getElementById('addInput');
+  if (idx === 4) {
+    inputWrap.style.display = 'none';
+    renderCalendar();
+  } else {
+    inputWrap.style.display = '';
+    addInput.placeholder = idx === 3 ? 'Add a new task...' : 'What do you need to add?';
+    renderList(idx);
+  }
+}
+
+// ── Tab title editing ──────────────────────────────────────────────────────
+function makeTabTitleEditable(idx) {
+  const span = document.getElementById('title-' + idx);
+  const current = state.tabTitles[idx];
+  const input = document.createElement('input');
+  input.value = current;
+  input.style.cssText = 'background:transparent;border:none;outline:none;font-family:inherit;font-size:inherit;font-weight:inherit;width:80px;color:inherit;';
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  function finish() {
+    const val = input.value.trim() || current;
+    state.tabTitles[idx] = val;
+    saveState();
+    const newSpan = document.createElement('span');
+    newSpan.id = 'title-' + idx;
+    newSpan.textContent = val;
+    input.replaceWith(newSpan);
+    newSpan.addEventListener('dblclick', () => makeTabTitleEditable(idx));
+  }
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+}
+
+document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+  const span = document.getElementById('title-' + idx);
+  if (span) span.addEventListener('dblclick', () => makeTabTitleEditable(idx));
+});
+
+// ── Add item ───────────────────────────────────────────────────────────────
+function handleKey(e) {
+  if (e.key === 'Enter') addItem();
+}
+
+function addItem() {
+  const input = document.getElementById('addInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  if (activeTab === 0) state.toPurchase.push({ id: uid(), text });
+  else if (activeTab === 1) state.toPack.push({ id: uid(), text });
+  else if (activeTab === 2) state.packed.push({ id: uid(), text });
+  else if (activeTab === 3) state.todo.push({ id: uid(), text, completed: false, date: '' });
+
+  input.value = '';
+  saveState();
+  renderList(activeTab);
+}
+
+// ── Render lists ───────────────────────────────────────────────────────────
+const LIST_KEYS = ['toPurchase', 'toPack', 'packed'];
+
+function renderList(tabIdx) {
+  if (tabIdx === 3) { renderTodo(); return; }
+  const key = LIST_KEYS[tabIdx];
+  const items = state[key];
+  const container = document.getElementById('list-' + tabIdx);
+
+  if (items.length === 0) {
+    container.innerHTML = `<div class="empty"><p>No items here yet.</p><span>Add something using the bar above!</span></div>`;
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <div class="list-item" id="item-${item.id}">
+      <button class="check-btn ${tabIdx === 2 ? 'checked' : ''}" onclick="moveItem('${item.id}','${key}')" title="Move item">
+        ${tabIdx === 2 ? '✓' : ''}
+      </button>
+      <span class="item-text">${escHtml(item.text)}</span>
+      <button class="delete-btn" onclick="deleteItem('${item.id}','${key}')" title="Delete">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+function renderTodo() {
+  const container = document.getElementById('list-3');
+  const sorted = [...state.todo].sort((a,b) => a.completed === b.completed ? 0 : a.completed ? 1 : -1);
+
+  if (sorted.length === 0) {
+    container.innerHTML = `<div class="empty"><p>Your checklist is empty.</p><span>Note down tasks with optional dates.</span></div>`;
+    return;
+  }
+
+  container.innerHTML = sorted.map(task => `
+    <div class="list-item" id="item-${task.id}" style="${task.completed ? 'opacity:.5' : ''}">
+      <button class="check-btn ${task.completed ? 'checked' : ''}" onclick="toggleTask('${task.id}')" title="Toggle">
+        ${task.completed ? '✓' : ''}
+      </button>
+      <div class="flex-1" style="flex:1">
+        <div class="item-text ${task.completed ? 'done' : ''}">${escHtml(task.text)}</div>
+        <div class="item-date-wrap">
+          <input type="date" class="item-date" value="${task.date || ''}" onchange="updateTaskDate('${task.id}', this.value)" title="Set date" />
+        </div>
+      </div>
+      <button class="delete-btn" onclick="deleteItem('${task.id}','todo')" title="Delete">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+// ── Actions ─────────────────────────────────────────────────────────────────
+function deleteItem(id, listKey) {
+  state[listKey] = state[listKey].filter(i => i.id !== id);
+  saveState();
+  renderList(activeTab);
+}
+
+function moveItem(id, from) {
+  const item = state[from].find(i => i.id === id);
+  if (!item) return;
+  state[from] = state[from].filter(i => i.id !== id);
+  // Cycle: toPurchase → toPack → packed → toPurchase
+  if (from === 'toPurchase') state.toPack.push(item);
+  else if (from === 'toPack') state.packed.push(item);
+  else if (from === 'packed') state.toPurchase.push(item);
+  saveState();
+  renderList(activeTab);
+}
+
+function toggleTask(id) {
+  const task = state.todo.find(t => t.id === id);
+  if (task) task.completed = !task.completed;
+  saveState();
+  renderTodo();
+}
+
+function updateTaskDate(id, date) {
+  const task = state.todo.find(t => t.id === id);
+  if (task) task.date = date;
+  saveState();
+}
+
+// ── Calendar ───────────────────────────────────────────────────────────────
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function changeMonth(dir) {
+  calDate = new Date(calDate.getFullYear(), calDate.getMonth() + dir, 1);
+  renderCalendar();
+}
+
+function toYMD(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function sameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function parseDate(s) {
+  if (!s) return null;
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+
+function renderCalendar() {
+  const year = calDate.getFullYear();
+  const month = calDate.getMonth();
+  document.getElementById('calTitle').textContent = MONTHS[month] + ' ' + year;
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+  const today = new Date();
+
+  // Build all events
+  const allEvents = [
+    ...state.events.map(e => ({...e})),
+    ...state.todo.filter(t => t.date).map(t => ({ id: t.id, title: t.text, date: t.date, type: 'task', completed: t.completed }))
+  ];
+
+  const grid = document.getElementById('calGrid');
+  let html = DAYS.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+
+  // Previous month fill
+  for (let i = firstDay - 1; i >= 0; i--) {
+    html += `<div class="cal-day other-month"><div class="day-num">${prevDays - i}</div></div>`;
+  }
+
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const ymd = toYMD(date);
+    const isToday = sameDay(date, today);
+    const dayEvts = allEvents.filter(e => e.date === ymd || (e.date && e.date.startsWith(ymd)));
+
+    const eventsHtml = dayEvts.slice(0, 3).map(e =>
+      `<div class="cal-event ${e.type} ${e.completed ? 'done' : ''}">${escHtml(e.title)}</div>`
+    ).join('') + (dayEvts.length > 3 ? `<div class="cal-more">+${dayEvts.length - 3} more</div>` : '');
+
+    html += `
+      <div class="cal-day ${isToday ? 'today' : ''}" onclick="addCalEvent('${ymd}')">
+        <div class="day-num">${d}</div>
+        ${eventsHtml}
+      </div>`;
+  }
+
+  // Next month fill
+  const total = firstDay + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= remaining; i++) {
+    html += `<div class="cal-day other-month"><div class="day-num">${i}</div></div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function addCalEvent(ymd) {
+  const title = prompt('Enter event title:');
+  if (!title || !title.trim()) return;
+  state.events.push({ id: uid(), title: title.trim(), date: ymd, type: 'manual' });
+  saveState();
+  renderCalendar();
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────
+function resetApp() {
+  if (confirm('Are you sure you want to clear all data?')) {
+    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    saveState();
+    // Restore tab titles in UI
+    [0,1,2,3,4].forEach(i => {
+      const el = document.getElementById('title-' + i);
+      if (el) el.textContent = state.tabTitles[i];
+    });
+    setTab(0);
+  }
+}
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+// Sync tab titles from saved state
+[0,1,2,3,4].forEach(i => {
+  const el = document.getElementById('title-' + i);
+  if (el) el.textContent = state.tabTitles[i];
+});
+renderList(0);
+</script>
+</body>
+</html>
