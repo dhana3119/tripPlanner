@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: "Georgia", serif;
+  
+  --color-sage: #8e9a78;
+  --color-warm: #d4a373;
+  --color-cream: #fdfbf9;
+  --color-ink: #3d3d3d;
+  --color-muted: #8c8c8c;
+  --color-sand: #e5e0d8;
+}
+
+@layer base {
+  body {
+    @apply antialiased text-ink bg-cream;
+    font-family: var(--font-sans);
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.card-shadow {
+  box-shadow: 0 10px 30px rgba(142, 154, 120, 0.05);
+}
